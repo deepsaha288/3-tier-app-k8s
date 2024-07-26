@@ -1,0 +1,83 @@
+create security group with port 22,http, https,6443,31000,31100
+1:lunch 3 server 1: master 2worker
+2: clone the code from git in master node
+3: update the all server--> sudo apt-get update
+3: run the instaling kubdm script on master and worker node
+4: create one shell script kubdm.sh--> give permission chmod +x kubdm.sh and run into master node
+5: after kubdm.sh command run in master node we get one join command that command we need to run in worker node
+#hit command into worker node
+sudo kubeadm join 172.31.4.189:6443 --token j7ablf.x5bv1lr0410xmyz3 --discovery-token-ca-cert-hash sha256:9223ed225bf46c1bb797827a200a639f82b9f6c75d5710c66c870733b28f4daf --v=5 (add v=5) when we join in to worker node
+
+6: check kuberneters cluster is working or not
+kubectl get nodes 
+kubectl get pod
+
+7: install docker in master node and worker node
+sudo apt install docker.io -y
+8: give the docker run permission for master and worker node
+sudo chmod 777 /var/run/docker.sock ---> access every user using this permission 
+sudo usermod -aG docker $USER or $ubuntu ---> access only ubuntu user 
+
+9: test docker install or not
+docker ps
+
+10: clone the git project directory in master node
+git clone https://github.com/DevMadhup/wanderlust.git
+cd project folder
+git branch --> check which branch you have
+git checkout brnach name --> if want change branch
+ls
+cd backend
+ls -l
+vi env.docker
+chnage the frontend url ip--> put worker ip address  our own  worker-node server  ip 
+
+check the cluser is running or not
+-->kubectl get nodes
+
+11: create namespace in to master node
+-->kubectl create namespace wanderlust
+
+check the namespace
+-->kubectl get namespace
+
+change the default namespace in my wanderlust namespace
+-->kubectl config set-context --current --namespace wanderlust
+
+12:Enable DNS resolution on kubernetes cluster :
+Check coredns pod in kube-system namespace and you will find Both coredns pods are running on master node
+
+kubectl get pods -n kube-system -o wide | grep -i core
+
+13:Above step will run coredns pod on worker node as well for DNS resolution
+
+kubectl edit deploy coredns -n kube-system -o yaml -->Make replica count from 2 to 4
+
+14:Enable DNS resolution on kubernetes cluster :
+Check  again coredns pod in kube-system namespace and you will find Both coredns pods are running on master node
+
+kubectl get pods -n kube-system -o wide | grep -i core
+
+15:coming back to frontend folder 
+cd frontend
+vi env.docker
+open .env.docker file and change the public IP Address with your worker node public IP :
+VITE_API_PATH=ip:31100
+
+docker build -t deepsaha22/frontend-wanderlust:latest .
+
+16:come backend folder
+cd ../backend/
+Open .env.docker file and edit below variables :
+MONGODB_URI: <your-mongodb-servicename>
+REDIS_URL: <your-redis-servicename>
+FRONTEND_URL: <your-workernode-publicIP>
+
+docker build -t deepsaha288/backend-wanderlust:latest .
+
+kubectl apply -f as per manifesto file name
+
+kubectl get all
+
+(notes- cni-container network interface is connect master node to worker node)
+
